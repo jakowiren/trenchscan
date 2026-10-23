@@ -1,0 +1,11 @@
+# Tape-measured ground truth, capture 1 (2026-10-23). Units: mm.
+scene: column radiator, apartment
+measured:
+  tube_circumference: 90          # measured with tape around one tube
+  tube_center_spacing: 55         # centre of tube 1 to centre of tube 2
+  radiator_height: 960            # top to bottom of radiator
+  radiator_bottom_to_floor: 160   # bottom of radiator to floor (where the cards lie)
+derived:
+  tube_diameter: 28.6             # 90 / pi
+scale_reference:
+  bank_card: {width: 85.6, height: 53.98}   # ISO/IEC 7810 ID-1
