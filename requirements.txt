@@ -1,0 +1,10 @@
+pycolmap>=3.11
+opencv-python
+numpy
+matplotlib
+plotly
+pyyaml
+open3d
+jupyterlab
+ipykernel
+nbstripout

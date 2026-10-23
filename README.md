@@ -7,22 +7,20 @@ Findings so far: [`docs/FINDINGS.md`](docs/FINDINGS.md).
 
 ## Layout
 ```
-src/trenchscan/    pipeline code (importable package)
-  frames.py        frame extraction + blur filter
-  sfm.py           structure-from-motion (pycolmap) + point-cloud helpers
-  viz.py           interactive 3D plots (plotly)
-notebooks/         exploration & visualisation — call the package, hold no core logic
+notebooks/         all code for now: each step = a definitions cell + a run cell
 data/raw/          input videos (git-ignored)
 data/ground_truth/ tape measurements (YAML)
 outputs/           generated frames / models (git-ignored)
 docs/FINDINGS.md   capture log, results, observations
 ```
 
+Exploration phase: code lives in the notebooks next to its plots. Once a step stabilises, its definitions cell moves to `src/trenchscan/` and the notebooks import it.
+
 ## Setup
 Needs Python ≥ 3.10 and `ffmpeg` on the PATH (`brew install ffmpeg` / `winget install ffmpeg` / `apt install ffmpeg`).
 ```bash
 python -m venv .venv && source .venv/bin/activate     # Windows: .venv\Scripts\activate
-pip install -e ".[dev]"
+pip install -r requirements.txt
 nbstripout --install          # strips notebook outputs on commit → clean diffs
 # copy the videos into data/raw/
 jupyter lab notebooks/01_sparse_reconstruction.ipynb
