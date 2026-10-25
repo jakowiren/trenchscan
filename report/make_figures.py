@@ -45,7 +45,9 @@ def load_notebook_code() -> dict:
 def main() -> None:
     nb = load_notebook_code()
     OUT.mkdir(parents=True, exist_ok=True)
-    CLIPS, COLORS, cv2, pycolmap = nb["CLIPS"], nb["COLORS"], nb["cv2"], nb["pycolmap"]
+    for old in OUT.glob("fig*"):   # figures are regenerated each run; drop ones the report no longer uses
+        old.unlink()
+    CLIPS, cv2, pycolmap = nb["CLIPS"], nb["cv2"], nb["pycolmap"]
     work = ROOT / "outputs/clip3"
     rec = pycolmap.Reconstruction(work / "sparse/0")
     frame_time = nb["frame_time"]
@@ -60,35 +62,30 @@ def main() -> None:
     strip = np.hstack([tiles[0], gap, tiles[1], gap, tiles[2]])
     plt.imsave(OUT / "fig1_scene.jpg", strip)
 
-    # Fig 2: sharpness and image speed over time, all clips
+    # sharpness and image speed per clip (the plot itself lives in notebook 1.3)
     stats = {name: nb["frame_stats"](path) for name, path in CLIPS.items()}
-    def rolling_median(y: np.ndarray, n: int = 10) -> np.ndarray:   # 10 samples = about 1 s
-        return np.array([np.nanmedian(y[max(0, i - n // 2): i + n // 2 + 1]) for i in range(len(y))])
 
-    fig, ax = plt.subplots(2, 1, figsize=(7, 3.8), sharex=True)
-    for name, s in stats.items():
-        for a, key in zip(ax, ("sharpness", "motion")):
-            a.plot(s["t"], s[key], color=COLORS[name], lw=0.5, alpha=0.3)
-            a.plot(s["t"], rolling_median(s[key]), color=COLORS[name], lw=1.5, label=name)
-    ax[0].set_yscale("log"); ax[0].set_ylabel("sharpness"); ax[0].legend(frameon=False, ncol=3, loc="lower left")
-    ax[1].set_ylim(0, 400); ax[1].set_ylabel("image speed (px/s)"); ax[1].set_xlabel("time in clip (s)")
-    ax[1].text(0.99, 0.95, "axis capped at 400; spikes reach 2500", transform=ax[1].transAxes, ha="right", va="top", fontsize=7, color="#666666")
-    fig.tight_layout(); fig.savefig(OUT / "fig2_quality.png", dpi=200); plt.close(fig)
-
-    # Fig 3: smooth regions and 3D points on three frames
+    # Fig 2: smooth regions and 3D points (top), line segments (bottom), on the same three frames
     ims = sorted(rec.images.values(), key=lambda im: frame_time(im.name))
-    fig, ax = plt.subplots(1, 3, figsize=(7, 3.3))
-    for a, target in zip(ax, (3, 15, 27)):
+    fig, ax = plt.subplots(2, 3, figsize=(5.6, 6.6))
+    for k, target in enumerate((3, 15, 27)):
         im = min(ims, key=lambda im: abs(frame_time(im.name) - target))
         grey = cv2.imread(str(work / "frames" / im.name), cv2.IMREAD_GRAYSCALE)
         m = nb["smooth_mask"](grey)
         xy = nb["point_pixels"](im)
-        a.imshow(grey, cmap="gray"); a.imshow(np.ma.masked_where(~m, m), cmap="winter", alpha=0.45)
-        a.scatter(xy[:, 0], xy[:, 1], s=1.5, c="#E24B4A")
-        a.set_title(f"{frame_time(im.name):.0f} s · {len(xy)} points"); a.axis("off")
-    fig.tight_layout(); fig.savefig(OUT / "fig3_points.png", dpi=200); plt.close(fig)
+        seg = nb["detect_lines"](grey)
+        top, bottom = ax[0, k], ax[1, k]
+        top.imshow(grey, cmap="gray"); top.imshow(np.ma.masked_where(~m, m), cmap="winter", alpha=0.45)
+        top.scatter(xy[:, 0], xy[:, 1], s=1.5, c="#E24B4A")
+        top.set_title(f"{frame_time(im.name):.0f} s · {len(xy)} points", fontsize=8)
+        bottom.imshow(grey, cmap="gray")
+        for x1, y1, x2, y2 in seg:
+            bottom.plot([x1, x2], [y1, y2], color="#1D9E75", lw=0.8)
+        bottom.set_title(f"{len(seg)} line segments", fontsize=8)
+        top.axis("off"); bottom.axis("off")
+    fig.tight_layout(); fig.savefig(OUT / "fig2_frames.png", dpi=200); plt.close(fig)
 
-    # Fig 4: registration and points per frame against image speed
+    # Fig 3: registration and points per frame against image speed
     kept = sorted((work / "frames").glob("*.jpg"))
     t_kept = np.array([frame_time(p.name) for p in kept])
     seen = {im.name: im.num_points3D for im in rec.images.values()}
@@ -102,19 +99,9 @@ def main() -> None:
     b.set_ylim(0, 400); b.spines["top"].set_visible(False)
     h1, l1 = a.get_legend_handles_labels(); h2, l2 = b.get_legend_handles_labels()
     a.legend(h1 + h2, l1 + l2, frameon=False, loc="lower left", bbox_to_anchor=(0, 1.0), ncol=3, fontsize=8)
-    fig.tight_layout(); fig.savefig(OUT / "fig4_registration.png", dpi=200); plt.close(fig)
+    fig.tight_layout(); fig.savefig(OUT / "fig3_registration.png", dpi=200); plt.close(fig)
 
-    # Fig 5: point cloud from above and from the front, with the camera path
     cloud = nb["clean"](nb["to_cloud"](rec))
-    R = nb["gravity_frame"](cloud); mu = cloud.xyz.mean(0)
-    p = (cloud.xyz - mu) @ R.T; c = (cloud.cam_centers - mu) @ R.T
-    fig, ax = plt.subplots(1, 2, figsize=(7, 2.3))
-    for a, (i, j, flip, title) in zip(ax, [(0, 2, -1, "from above"), (0, 1, 1, "from the front")]):
-        a.scatter(p[:, i], flip * p[:, j], s=0.4, c=cloud.rgb / 255)
-        a.plot(c[:, i], flip * c[:, j], "-", color="#E24B4A", lw=1)
-        a.set_title(title); a.set_aspect("equal"); a.set_xticks([]); a.set_yticks([])
-        for side in a.spines.values(): side.set_visible(False)
-    fig.tight_layout(); fig.savefig(OUT / "fig5_cloud.png", dpi=200); plt.close(fig)
 
     # Numbers the report quotes
     rank = lambda a: np.argsort(np.argsort(a))  # noqa: E731
@@ -157,7 +144,6 @@ def main() -> None:
         pp = nb["period"](nb["profile_along"](pts2d, np.ones(len(pts2d)), origin, axis, hw, cell, extent), cell, 0.06, 0.5)
         print(f"band {hw}: period lines {pl[0]:.2f} (ac {pl[1]:.2f}), points {pp[0]:.2f} (ac {pp[1]:.2f})")
     prof_l = nb["profile_along"](grid_xy, votes_w, origin, axis, 0.1, cell, extent)
-    prof_p = nb["profile_along"](pts2d, np.ones(len(pts2d)), origin, axis, 0.1, cell, extent)
     spacing_u = nb["period"](prof_l, cell, 0.06, 0.5)[0]
     h = np.concatenate([nb["end_heights"](planes, keep, cr, ur, up, x0) for x0 in xy[on_row]])
     tape = nb["GT"]["measured"]
@@ -166,35 +152,7 @@ def main() -> None:
         print(f"height {q}-{100 - q} pct: {top - bottom:.2f} units -> spacing "
               f"{tape['radiator_height'] * spacing_u / (top - bottom):.1f} mm (tape {tape['tube_center_spacing']})")
 
-    # Fig 6: segments on one frame, and the votes from above
-    im = min(ims, key=lambda im: abs(frame_time(im.name) - 15))
-    grey = cv2.imread(str(work / "frames" / im.name), cv2.IMREAD_GRAYSCALE)
-    fig, ax = plt.subplots(1, 2, figsize=(7, 3.6), gridspec_kw={"width_ratios": [1, 2.2]})
-    ax[0].imshow(grey, cmap="gray")
-    for x1, y1, x2, y2 in nb["detect_lines"](grey):
-        ax[0].plot([x1, x2], [y1, y2], color="#1D9E75", lw=0.8)
-    ax[0].set_title("line segments, 15 s"); ax[0].axis("off")
-    row_xy = xy[on_row]; zlo = np.maximum(row_xy.min(0) - 0.35, lo); zhi = np.minimum(row_xy.max(0) + 0.35, hi)
-    ax[1].imshow(sharp, origin="lower", extent=[lo[0], hi[0], lo[1], hi[1]], cmap="gray_r", vmin=0, vmax=np.percentile(sharp, 99.9))
-    ax[1].scatter(*pts2d.T, s=0.6, c="#E24B4A", label="3D points")
-    ax[1].set_xlim(zlo[0], zhi[0]); ax[1].set_ylim(zlo[1], zhi[1]); ax[1].set_aspect("equal")
-    ax[1].set_xticks([]); ax[1].set_yticks([]); ax[1].set_title("from above: line votes (dark) and 3D points (red)")
-    fig.tight_layout(); fig.savefig(OUT / "fig6_lines.png", dpi=200); plt.close(fig)
-
-    # Fig 7: repeat along the radiator front, and where the segments end
-    s_bins = -extent + (np.arange(len(prof_l)) + 0.5) * cell
-    fig, ax = plt.subplots(1, 2, figsize=(7, 2.2), gridspec_kw={"width_ratios": [2, 1]})
-    ax[0].plot(s_bins, prof_l / prof_l.max(), color="#1D9E75", lw=1, label="line votes")
-    ax[0].plot(s_bins, prof_p / prof_p.max(), color="#E24B4A", lw=0.7, alpha=0.8, label="3D points")
-    ax[0].set_xlabel("position along the radiator front (model units)"); ax[0].set_yticks([])
-    ax[0].legend(frameon=False, fontsize=7, loc="upper left", ncol=2)
-    ax[1].hist(h, 150, color="#888888")
-    for v in np.percentile(h, [2, 98]):
-        ax[1].axvline(v, color="k", ls="--", lw=0.8)
-    ax[1].set_xlabel("height of segment ends (units)"); ax[1].set_yticks([])
-    fig.tight_layout(); fig.savefig(OUT / "fig7_spacing.png", dpi=200); plt.close(fig)
-
-    # Fig 8: the SfM points alone, and with the vertical lines, from above and from the front
+    # Fig 4: the SfM points alone, and with the vertical lines, from above and from the front
     segments = nb["vertical_segments"](planes, keep, cr, ur, up, xy[on_row])
     s_row = (xy[on_row] - origin) @ axis
     print(f"vertical lines: {len(segments)} over {np.ptp(s_row):.2f} units = {np.ptp(s_row) / spacing_u:.1f} spacings")
@@ -212,7 +170,7 @@ def main() -> None:
             a.set_title(f"{title} · {'points and lines' if with_lines else '3D points only'}", fontsize=8)
             a.set_aspect("equal"); a.set_xticks([]); a.set_yticks([])
             for side in a.spines.values(): side.set_visible(False)
-    fig.tight_layout(); fig.savefig(OUT / "fig8_points_and_lines.png", dpi=200); plt.close(fig)
+    fig.tight_layout(); fig.savefig(OUT / "fig4_model.png", dpi=200); plt.close(fig)
     print("figures in", OUT)
 
 

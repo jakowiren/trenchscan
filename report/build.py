@@ -26,7 +26,7 @@ p, li { margin: 0 0 1.6mm; }
 ul, ol { padding-left: 5mm; margin: 0 0 2mm; }
 .byline { color: #555; font-size: 8.6pt; margin-bottom: 4mm; }
 code { font-size: 8.4pt; }
-img { display: block; max-width: 100%; margin: 2mm auto 0.5mm; }
+img { display: block; max-width: 100%; max-height: 130mm; margin: 2mm auto 0.5mm; }   /* cap tall figures */
 figure { margin: 0 0 3mm; break-inside: avoid; }
 figcaption, .caption { font-size: 8.2pt; color: #555; margin: 0; text-align: center; }
 table { border-collapse: collapse; width: 100%; font-size: 8.4pt; margin: 1.5mm 0 3mm; break-inside: avoid; }
