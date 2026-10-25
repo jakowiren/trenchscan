@@ -1,6 +1,6 @@
 # Trenchscan: phone video to 3D, tested on a radiator
 
-<p class="byline">Jakob Wirén · October 2026 · Hand-in: repository, notebook <code>notebooks/01_sparse_reconstruction.ipynb</code>, this report. References such as §2.4 point to notebook sections.</p>
+<p class="byline">Jakob Wirén · October 2026 · Code and notebook: <a href="https://github.com/jakowiren/trenchscan">github.com/jakowiren/trenchscan</a>. The notebook (<code>notebooks/01_sparse_reconstruction.ipynb</code>, executed copy with all plots in <code>notebooks/01_sparse_reconstruction.html</code>) has the code and plots behind this report, and references like §2.4 point to its sections.</p>
 
 ## 1 Goal
 

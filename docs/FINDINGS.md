@@ -3,9 +3,9 @@
 ## Capture 1 — 2026-10-23, column radiator, apartment
 
 **Setup**
-- Target: white cast-iron column radiator (vertical tubes ≈ cylinders), bank card on floor for scale (85.6 × 54 mm)
+- Target: white cast-iron column radiator (vertical tubes ≈ cylinders), two bank cards on the floor for scale (85.6 × 54 mm)
 - Phone: Oppo A38, max video resolution 1280×720 (no 4K available)
-- 3 clips: 47 s (top-down, card visible), 46 s (arc, then close-up), 36 s (arc)
+- 3 clips: 47 s (top-down, cards visible), 46 s (side view of the left end, then close-up), 36 s (arc from the left end to the front)
 - Constraints: no surface prep (no tape/markers), furniture limits stand-off distance
 
 **Ground truth (tape, mm)** — see `data/ground_truth/radiator_2026-10-23.yaml`
@@ -16,20 +16,20 @@
 | Radiator height (top to bottom) | 960 |
 | Radiator bottom to floor | 160 |
 
-**Result — clip 3, CPU only (pycolmap 4.0, SIFT, sequential matching)**
+**Result — clip 3, CPU only (pycolmap 4.2.1, SIFT, sequential matching; the run the report quotes)**
 | Metric | Value |
 |---|---|
 | Frames extracted (4 fps) | 143 |
 | Kept after blur filter (top 75% Laplacian variance) | 107 |
 | Registered | 87 (81%) |
-| Sparse points (filtered) | ~3,070 |
-| Mean reprojection error | 0.67 px |
-| Runtime (2 CPU cores) | ~1 min |
+| Sparse points | 3,594 |
+| Mean reprojection error | 0.66 px |
+| Runtime (CPU) | ~1 min |
 
 **Observations**
 1. Camera poses are solid; scene structure (wall corner, skirting board, radiator outline) is recognisable.
 2. Radiator surfaces are nearly empty: smooth white paint gives SIFT almost nothing. Only edges and shadowed gaps produce points.
-3. Second half of clip 2 is unusable: too close + fast motion → blur.
+3. Second half of clip 2 is close and fast, but much of its low sharpness is bare surface rather than blur (notebook 1.3).
 4. The cards are visible in clip 1 and early in clip 2, not in clip 3 (notebook 1.2) → scale needs clip 1 or 2 combined with clip 3. Not used yet.
 
 ## Parameter variations — 2026-10-25, clip 3
