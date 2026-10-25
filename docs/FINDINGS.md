@@ -52,6 +52,13 @@ Reprojection error stays 0.50–0.70 px in every run. SfM takes 13–48 s on thi
 3. **Overlap 5 to 25 changes nothing here.** The camera moves smoothly along one arc, so a frame only matches its near neighbours anyway; more candidate pairs add no new matches. A capture that revisits a place (a loop) would need wider overlap or loop detection.
 4. **No setting recovers the end of the clip.** Every variant loses the fast close-up after 28.5 s (2.4). That failure is in the capture, not the settings.
 
+## Line trial — 2026-10-25, clip 3 (notebook Part 3, report Section 5)
+LSD line segments in the 87 registered frames, back-projected with the SfM poses, voted from above assuming vertical tubes.
+1. Segments follow the tube edges and gaps where SIFT found almost no points (median 160 segments vs 279 3D points per frame).
+2. From above, the votes form an evenly spaced row of spots along the radiator front, repeating every 0.36–0.37 model units; the 3D points repeat only weakly.
+3. Spacing over tube height (6.0–6.2 units) gives 56–58 mm for the 960 mm radiator; tape says 55 mm. No scale reference needed for the ratio.
+4. Not yet: diameters (tube edges are tangents that move with the viewpoint), and pipes that are not vertical.
+
 ## Why these constraints matter (link to production)
 The constraints here mirror real trench capture rather than being lab artefacts:
 - **Fixed, modest phone hardware** — crews use what they have; pipeline can't assume 4K.
@@ -68,3 +75,4 @@ The constraints here mirror real trench capture rather than being lab artefacts:
 - [x] Tape-measure ground truth (circumference, spacing, height, floor clearance)
 - [ ] Combine clips 1 + 3 (adds top-down view + card)
 - [ ] Try a learned matcher / VGGT on the same frames and compare point density on the tubes
+- [ ] Fit cylinders to the tube edges from the line trial → diameter vs 28.6 mm
