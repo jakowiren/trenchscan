@@ -65,27 +65,27 @@ def main() -> None:
     # sharpness and image speed per clip (the plot itself lives in notebook 1.3)
     stats = {name: nb["frame_stats"](path) for name, path in CLIPS.items()}
 
-    # Fig 2: smooth regions and 3D points (top), line segments (bottom), on the same three frames
+    # Fig 3 and Fig 5: the same three frames, once with smooth regions and 3D points, once with line segments
     ims = sorted(rec.images.values(), key=lambda im: frame_time(im.name))
-    fig, ax = plt.subplots(2, 3, figsize=(5.6, 6.6))
-    for k, target in enumerate((3, 15, 27)):
-        im = min(ims, key=lambda im: abs(frame_time(im.name) - target))
-        grey = cv2.imread(str(work / "frames" / im.name), cv2.IMREAD_GRAYSCALE)
-        m = nb["smooth_mask"](grey)
-        xy = nb["point_pixels"](im)
+    picks = [min(ims, key=lambda im: abs(frame_time(im.name) - t)) for t in (3, 15, 27)]
+    greys = [cv2.imread(str(work / "frames" / im.name), cv2.IMREAD_GRAYSCALE) for im in picks]
+    fig, ax = plt.subplots(1, 3, figsize=(6, 3.6))
+    for a, im, grey in zip(ax, picks, greys):
+        m = nb["smooth_mask"](grey); xy = nb["point_pixels"](im)
+        a.imshow(grey, cmap="gray"); a.imshow(np.ma.masked_where(~m, m), cmap="winter", alpha=0.45)
+        a.scatter(xy[:, 0], xy[:, 1], s=1.5, c="#E24B4A")
+        a.set_title(f"{frame_time(im.name):.0f} s · {len(xy)} points", fontsize=8); a.axis("off")
+    fig.tight_layout(); fig.savefig(OUT / "fig3_points.png", dpi=200); plt.close(fig)
+    fig, ax = plt.subplots(1, 3, figsize=(6, 3.6))
+    for a, im, grey in zip(ax, picks, greys):
         seg = nb["detect_lines"](grey)
-        top, bottom = ax[0, k], ax[1, k]
-        top.imshow(grey, cmap="gray"); top.imshow(np.ma.masked_where(~m, m), cmap="winter", alpha=0.45)
-        top.scatter(xy[:, 0], xy[:, 1], s=1.5, c="#E24B4A")
-        top.set_title(f"{frame_time(im.name):.0f} s · {len(xy)} points", fontsize=8)
-        bottom.imshow(grey, cmap="gray")
+        a.imshow(grey, cmap="gray")
         for x1, y1, x2, y2 in seg:
-            bottom.plot([x1, x2], [y1, y2], color="#1D9E75", lw=0.8)
-        bottom.set_title(f"{len(seg)} line segments", fontsize=8)
-        top.axis("off"); bottom.axis("off")
-    fig.tight_layout(); fig.savefig(OUT / "fig2_frames.png", dpi=200); plt.close(fig)
+            a.plot([x1, x2], [y1, y2], color="#1D9E75", lw=0.8)
+        a.set_title(f"{frame_time(im.name):.0f} s · {len(seg)} line segments", fontsize=8); a.axis("off")
+    fig.tight_layout(); fig.savefig(OUT / "fig5_lines.png", dpi=200); plt.close(fig)
 
-    # Fig 3: registration and points per frame against image speed
+    # Fig 4: registration and points per frame against image speed
     kept = sorted((work / "frames").glob("*.jpg"))
     t_kept = np.array([frame_time(p.name) for p in kept])
     seen = {im.name: im.num_points3D for im in rec.images.values()}
@@ -99,7 +99,7 @@ def main() -> None:
     b.set_ylim(0, 400); b.spines["top"].set_visible(False)
     h1, l1 = a.get_legend_handles_labels(); h2, l2 = b.get_legend_handles_labels()
     a.legend(h1 + h2, l1 + l2, frameon=False, loc="lower left", bbox_to_anchor=(0, 1.0), ncol=3, fontsize=8)
-    fig.tight_layout(); fig.savefig(OUT / "fig3_registration.png", dpi=200); plt.close(fig)
+    fig.tight_layout(); fig.savefig(OUT / "fig4_registration.png", dpi=200); plt.close(fig)
 
     cloud = nb["clean"](nb["to_cloud"](rec))
 
@@ -152,15 +152,26 @@ def main() -> None:
         print(f"height {q}-{100 - q} pct: {top - bottom:.2f} units -> spacing "
               f"{tape['radiator_height'] * spacing_u / (top - bottom):.1f} mm (tape {tape['tube_center_spacing']})")
 
-    # Fig 4: the SfM points alone, and with the vertical lines, from above and from the front
     segments = nb["vertical_segments"](planes, keep, cr, ur, up, xy[on_row])
     s_row = (xy[on_row] - origin) @ axis
     print(f"vertical lines: {len(segments)} over {np.ptp(s_row):.2f} units = {np.ptp(s_row) / spacing_u:.1f} spacings")
+
+    # Fig 6: the vote seen from above, zoomed to the radiator front
+    zlo = np.maximum(xy[on_row].min(0) - 0.35, lo); zhi = np.minimum(xy[on_row].max(0) + 0.35, hi)
+    fig, ax = plt.subplots(1, 2, figsize=(7, 3.6))
+    ax[0].imshow(sharp, origin="lower", extent=[lo[0], hi[0], lo[1], hi[1]], cmap="magma", vmin=0, vmax=np.percentile(sharp, 99.9))
+    ax[0].set_title("line votes", fontsize=8)
+    ax[1].scatter(*pts2d.T, s=1.5, c="#E24B4A"); ax[1].set_title("3D points", fontsize=8)
+    for a in ax:
+        a.set_xlim(zlo[0], zhi[0]); a.set_ylim(zlo[1], zhi[1]); a.set_aspect("equal"); a.set_xticks([]); a.set_yticks([])
+    fig.tight_layout(); fig.savefig(OUT / "fig6_votes.png", dpi=200); plt.close(fig)
+
+    # Fig 2 and Fig 7: the model from above and from the front; Fig 7 adds the vertical lines below
     Ru = nb["upright_frame"](cloud, up); mu = cloud.xyz.mean(0)
     p = (cloud.xyz - mu) @ Ru.T; c = (cloud.cam_centers - mu) @ Ru.T; e = (segments - mu) @ Ru.T
-    fig, ax = plt.subplots(2, 2, figsize=(7, 4.4))
-    for row, with_lines in enumerate((False, True)):
-        for a, (i, j, flip, title) in zip(ax[row], [(0, 2, -1, "from above"), (0, 1, 1, "from the front")]):
+
+    def draw_model(axes, with_lines):
+        for a, (i, j, flip, title) in zip(axes, [(0, 2, -1, "from above"), (0, 1, 1, "from the front")]):
             a.scatter(p[:, i], flip * p[:, j], s=0.4, c="#BBBBBB" if with_lines else cloud.rgb / 255)
             a.plot(c[:, i], flip * c[:, j], "-", color="#E24B4A", lw=1)
             if with_lines:
@@ -170,7 +181,11 @@ def main() -> None:
             a.set_title(f"{title} · {'points and lines' if with_lines else '3D points only'}", fontsize=8)
             a.set_aspect("equal"); a.set_xticks([]); a.set_yticks([])
             for side in a.spines.values(): side.set_visible(False)
-    fig.tight_layout(); fig.savefig(OUT / "fig4_model.png", dpi=200); plt.close(fig)
+
+    fig, ax = plt.subplots(1, 2, figsize=(7, 2.3)); draw_model(ax, False)
+    fig.tight_layout(); fig.savefig(OUT / "fig2_model.png", dpi=200); plt.close(fig)
+    fig, ax = plt.subplots(2, 2, figsize=(7, 4.4)); draw_model(ax[0], False); draw_model(ax[1], True)
+    fig.tight_layout(); fig.savefig(OUT / "fig7_model.png", dpi=200); plt.close(fig)
     print("figures in", OUT)
 
 
