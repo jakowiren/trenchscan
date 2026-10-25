@@ -48,7 +48,8 @@ def find_chrome() -> str:
 def main() -> None:
     body = markdown.markdown((HERE / "report.md").read_text(encoding="utf-8"), extensions=["tables"])
     # keep each image with its caption on one page
-    body = re.sub(r'<p>(<img [^>]+>)</p>\s*<p class="caption">(.*?)</p>', r"<figure>\1<figcaption>\2</figcaption></figure>", body, flags=re.S)
+    body = re.sub(r'<p>(<img [^>]+>)</p>\s*<p class="caption">(.*?)</p>',
+                  r"<figure>\1<figcaption>\2</figcaption></figure>", body, flags=re.S)
     html = HERE / "report.html"
     html.write_text(f'<!doctype html><html><head><meta charset="utf-8"><title>Trenchscan report</title>'
                     f"<style>{CSS}</style></head><body>{body}</body></html>", encoding="utf-8")
