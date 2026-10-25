@@ -8,3 +8,5 @@ open3d
 jupyterlab
 ipykernel
 nbstripout
+# report build (report/build.py)
+markdown

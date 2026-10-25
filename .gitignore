@@ -6,3 +6,6 @@ __pycache__/
 .ipynb_checkpoints/
 .venv/
 *.egg-info/
+# report build outputs (python report/make_figures.py && python report/build.py); report.pdf is committed as the hand-in
+report/figures/
+report/report.html

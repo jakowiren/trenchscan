@@ -4,6 +4,7 @@ Weekend prototype: **phone video → 3D reconstruction → recognised components
 
 Test scene: a column radiator in my apartment (vertical tubes ≈ pipes), filmed on a 720p phone with a bank card for scale.
 Findings so far: [`docs/FINDINGS.md`](docs/FINDINGS.md).
+Report: [`report/report.pdf`](report/report.pdf).
 
 ## Layout
 ```
@@ -12,6 +13,7 @@ data/raw/          input videos (git-ignored)
 data/ground_truth/ tape measurements (YAML)
 outputs/           generated frames / models (git-ignored)
 docs/FINDINGS.md   capture log, results, observations
+report/            report.md (source), make_figures.py, build.py -> report.pdf (generated, committed as the hand-in)
 ```
 
 Exploration phase: all code lives in **one notebook**, `notebooks/01_sparse_reconstruction.ipynb`, next to its plots (Part 1 looks at the data, Part 2 reconstructs, Part 3 tries line features on the tubes). Once a step stabilises, its definitions cell moves to `src/trenchscan/` and the notebook imports it.
@@ -26,6 +28,8 @@ nbstripout --install          # strips notebook outputs on commit → clean diff
 jupyter lab notebooks/01_sparse_reconstruction.ipynb
 ```
 Runs on CPU; SfM on ~100 frames at 720p takes about a minute.
+
+Report: after running the notebook once, `python report/make_figures.py && python report/build.py` (needs Google Chrome or Chromium).
 
 ## Status
 - [x] Frames + blur filter
