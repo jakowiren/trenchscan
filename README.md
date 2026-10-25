@@ -14,7 +14,7 @@ outputs/           generated frames / models (git-ignored)
 docs/FINDINGS.md   capture log, results, observations
 ```
 
-Exploration phase: code lives in the notebooks next to its plots. Once a step stabilises, its definitions cell moves to `src/trenchscan/` and the notebooks import it.
+Exploration phase: all code lives in **one notebook**, `notebooks/01_sparse_reconstruction.ipynb`, next to its plots (Part 1 looks at the data, Part 2 reconstructs). Once a step stabilises, its definitions cell moves to `src/trenchscan/` and the notebook imports it.
 
 ## Setup
 Needs Python ≥ 3.10 and `ffmpeg` on the PATH (`brew install ffmpeg` / `winget install ffmpeg` / `apt install ffmpeg`).

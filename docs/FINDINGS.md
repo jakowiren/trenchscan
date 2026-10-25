@@ -4,7 +4,7 @@
 
 **Setup**
 - Target: white cast-iron column radiator (vertical tubes ≈ cylinders), bank card on floor for scale (85.6 × 54 mm)
-- Phone: max video resolution 1280×720 (no 4K available)
+- Phone: Oppo A38, max video resolution 1280×720 (no 4K available)
 - 3 clips: 47 s (top-down, card visible), 46 s (arc, then close-up), 36 s (arc)
 - Constraints: no surface prep (no tape/markers), furniture limits stand-off distance
 
@@ -30,7 +30,27 @@
 1. Camera poses are solid; scene structure (wall corner, skirting board, radiator outline) is recognisable.
 2. Radiator surfaces are nearly empty: smooth white paint gives SIFT almost nothing. Only edges and shadowed gaps produce points.
 3. Second half of clip 2 is unusable: too close + fast motion → blur.
-4. Card is clearly visible in clip 1 and the start of clips 2–3 → scale recovery feasible.
+4. The cards are visible in clip 1 and early in clip 2, not in clip 3 (notebook 1.2) → scale needs clip 1 or 2 combined with clip 3. Not used yet.
+
+## Parameter variations — 2026-10-25, clip 3
+One setting changed at a time in the notebook's run cells (2.1 frames, 2.2 SfM), everything else at baseline (4 fps, keep 0.75, overlap 12). Each run twice, since SfM is not deterministic; ranges are the two runs.
+
+| Variant | Frames into SfM | Registered | Models | 3D points | Views per point | Model covers |
+|---|---|---|---|---|---|---|
+| Baseline | 107 of 143 | 87 (81 %) | 1 | 3,603–3,612 | 6.5 | 0–27 s |
+| keep 0.5 (stricter blur filter) | 72 of 143 | 32 (44 %) | 2–3 | 1,733–1,738 | 5.7 | 0–16.5 s |
+| keep 0.9 (looser blur filter) | 128 of 143 | 106 (83 %) | 1 | 3,910–3,930 | 6.9 | 0–28.5 s |
+| fps 2 | 54 of 72 | 27–29 (50–54 %) | 2 | 1,221–1,236 | 5.3 | 0–18/19 s |
+| fps 6 | 161 of 215 | 133 (83 %) | 1 | 4,868–4,910 | 8.1 | 0–28.5 s |
+| overlap 5 | 107 of 143 | 87 (81 %) | 1 | 3,616–3,627 | 6.4–6.5 | 0–27 s |
+| overlap 25 | 107 of 143 | 87 (81 %) | 1 | 3,600–3,631 | 6.5 | 0–27 s |
+
+Reprojection error stays 0.50–0.70 px in every run. SfM takes 13–48 s on this machine; overlap 5 vs 25 is within run-to-run noise.
+
+1. **A stricter blur filter is worse.** keep 0.5 removes frames, the gaps between neighbours grow, and the model breaks at about 17 s into separate pieces. keep 0.9 registers more frames and points than the baseline. What SfM needs is overlap between consecutive frames, more than sharpness of each frame (fits 2.1: the filter drops bare frames, not just blurry ones).
+2. **Denser sampling helps, sparser breaks.** fps 2 breaks at 18–19 s, like keep 0.5. fps 6 gives the most points and the longest tracks (8.1 views per point).
+3. **Overlap 5 to 25 changes nothing here.** The camera moves smoothly along one arc, so a frame only matches its near neighbours anyway; more candidate pairs add no new matches. A capture that revisits a place (a loop) would need wider overlap or loop detection.
+4. **No setting recovers the end of the clip.** Every variant loses the fast close-up after 28.5 s (2.4). That failure is in the capture, not the settings.
 
 ## Why these constraints matter (link to production)
 The constraints here mirror real trench capture rather than being lab artefacts:
