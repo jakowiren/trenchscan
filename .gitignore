@@ -1,7 +1,9 @@
-data/raw/
+# local backup of the clips with their audio; data/raw/ holds the video-only copies, in Git LFS
+data/raw_original/
 data/frames*/
 outputs/
 *.mp4
+!data/raw/*.mp4
 __pycache__/
 .ipynb_checkpoints/
 .venv/
