@@ -1,12 +1,16 @@
-pycolmap>=3.11
+pycolmap>=4.2
 opencv-python
 numpy
 matplotlib
 plotly
 pyyaml
-open3d
 jupyterlab
 ipykernel
 nbstripout
 # report build (report/build.py)
 markdown
+# this repo's package (src/trenchscan), editable
+-e .
+# checks: pytest, ruff check .
+pytest
+ruff
